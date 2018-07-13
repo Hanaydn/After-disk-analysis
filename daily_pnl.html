@@ -1,0 +1,132 @@
+
+<html>
+<meta charset="UTF-8">
+日期:&nbsp;<select name="起始日期" id="sdate"></select><select name="终止日期" id="edate"></select>&nbsp;&nbsp;<button type="button" id="button" onclick="updatePnl();">查询</button>
+<h3 align="center">PnL 按天汇总</h3>
+<table id="daily_pnl" class="pnl" border="1" align="center">
+  <thead></thead>
+  <tbody></tbody>
+</table>
+<br>
+
+<style type="text/css">
+table.pnl {
+  min-width: 1000px;
+  font-family: verdana,arial,sans-serif;
+  font-size:11px;
+  color:#333333;
+  border-width: 1px;
+  border-color: #666666;
+  border-collapse: collapse;
+}
+table.pnl th {
+  border-width: 1px;
+  padding: 2px;
+  border-style: solid;
+  border-color: #666666;
+  background-color: #dedede;
+}
+table.pnl td {
+  border-width: 1px;
+  padding: 3px;
+  border-style: solid;
+  border-color: #666666;
+  text-align:center
+}
+
+table tr:nth-of-type(1){
+  background: #dedede;
+  font-weight:bold;
+}
+
+</style>
+<script src="jquery-3.2.1.min.js"></script>
+<script type="text/javascript">
+function updateTable(id, part, infos, dates, clear){
+  var tableRef = document.getElementById(id).getElementsByTagName(part)[0];
+  if(clear){
+    while(tableRef.rows.length > 0) 
+      tableRef.deleteRow(0);
+  }
+  
+  var newRow = tableRef.insertRow();
+  var titleCell = newRow.insertCell();
+  var titleText = document.createTextNode("product \\ date ");
+  titleCell.appendChild(titleText);
+	for (var p in dates) {
+	  titleCell  = newRow.insertCell();
+	  titleText = document.createTextNode(p);
+    titleCell.appendChild(titleText);
+  }
+  
+  for(var k in infos){
+    var newRow = tableRef.insertRow();
+    var firstCell  = newRow.insertCell(0);
+	  var firstText  = document.createTextNode(k);
+	
+    firstCell.appendChild(firstText);
+	  info = infos[k];
+	
+	  for (var p in dates) {
+	    var newCell  = newRow.insertCell();
+	    if (! info.hasOwnProperty(p))
+	      continue;
+	    var newText  = document.createTextNode(info[p]);
+      newCell.appendChild(newText);
+	  }
+  }
+}
+
+function listDates(dateList){
+  var result = "";
+  for (var i = 0; i < dateList.length; ++i) 
+    result = result + "<option value=\'"+ dateList[i] +"\'>" + dateList[i] + "</option>";
+  document.getElementById("sdate").innerHTML = result; 
+  document.getElementById("edate").innerHTML = result;   
+}
+function setupDates(){
+  $.ajax({
+    url: '/scripts/pos_summary?code=get_all_date',
+    data: {},   
+    success: function (str) {
+      eval("dateList=" + str);
+      listDates(dateList);
+    }
+  });
+}
+
+function showPnl(params){
+  $.ajax({
+    url: '/scripts/pos_summary' + params,
+    data: {},
+    success: function (str) {
+      eval("data=" + str);
+      var infos = data["infos"];
+      var dates = data["dates"];
+      document.getElementById("button").innerHTML = "查询";
+      updateTable("daily_pnl", "tbody", infos, dates, true);
+    }
+  });
+}
+function pnl(){
+  params = window.location.href.split('?')
+  if (params.length > 1) params = "?" + params[1]
+  else params = ""
+    showPnl(params);
+  // params = window.location.href.split('?')
+  // if (params.length > 1) params = "?" + params[1];
+  // else params = "?code=get_daily_profit&date=20180503-20180510";
+}
+function updatePnl(){
+  var asdate = document.getElementById("sdate");
+  var all_sdate = asdate.options[asdate.selectedIndex].value;
+  var aedate = document.getElementById("edate");
+  var all_edate = aedate.options[aedate.selectedIndex].value;
+  document.getElementById("button").innerHTML = "正在查询";
+  showPnl("?all=1&date=" + all_sdate + "-" + all_edate + "&code=get_daily_profit");
+}
+
+setupDates();
+pnl();
+</script>
+</html>
