@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>总收益</title>
+	<script src="http://cdn.hcharts.cn/highcharts/highcharts.js"></script>
+	<script src="http://cdn.hcharts.cn/highcharts/modules/exporting.js"></script>
+	<script src="http://cdn.hcharts.cn/highcharts/modules/series-label.js"></script>
+	<script src="http://cdn.hcharts.cn/highcharts/modules/oldie.js"></script>
+	<script src="http://cdn.hcharts.cn/highcharts/highcharts-more.js"></script>
+	<!-- <script src="http://cdn.hcharts.cn/highcharts/highcharts-more.js"></script> -->
+</head>
+<body>
+	<div id="container" style="max-width:100%;height:600px"></div>
+</body>
+<script type="text/javascript">
+    function profit(){
+    	var profitData = [-130.79, -1.16, -128.55,-128.55,-128.55,-236.99, -178.84, -352.51, 2032.1, 1075.55,1075.55,1075.55,1075.55,2545.74,4209.75,7505.47,11241.92,11241.92,11241.92,15603.45,21339.86,23662.23,27393.53,26568.65,26568.65,26568.65,44198.68,44583.62,43447.39,41895.77,44107.06,44107.06,44107.06,47248.52,46398.28,48229.9,46618.89,46247.09,46247.09,46247.09,42584.81,56907.19,50865.61,72717.67,85089.96,85089.96,85089.96,85241.39,94069.48,94618.42,91388.12,105938.45,105938.45,105938.45,111599.19,121088.64,123033.27,123033.27,123033.27,123033.27,123033.27,123033.27,123033.27,123033.27,128520.87,124716.14,124716.14,124716.14,128259.66,129590.71,136260.53,146133.22,140182.99,140182.99,140182.99,155950.23,163203.07,160413.73,160746.66,154280.47,154280.47,154280.47,157126.66,156337.42,155842.78,150853.83,150853.83,150853.83,150853.83,146449.89,143478.12,138066.33,139402.18,142431.75,142431.75,142431.75,142431.75,142431.75,142715.37,142715.37,142715.37,142715.37,142715.37,134303.26,134116.91,127862.65,127862.65,127862.65,127862.65,127862.65,129841.44,123943.13,120387.24,122525.58,118838.31,118838.31,118838.31,113623.23,107535.6,103515.3,105686.82,93365.59,93365.59,93365.59,93365.59,89950,87000.63,87000.63,77610.91,77610.91,77610.91,77610.91,77610.91,91539.13,103995.39,95515.93,95515.93,95515.93,86046.18]
+    	var chart = Highcharts.chart('container', {
+		title: {
+				text: '总收益'
+		},
+		yAxis: {
+				title: {
+						text: '收益'
+				}
+		},
+		xAxis: {
+				type: 'datetime',
+				dateTimeLabelFormats: {
+						day: '%Y-%m-%d'
+				}
+		},
+		plotOptions: {
+				series: {
+						label: {
+								connectorAllowed: false
+						},
+						pointStart: Date.UTC(2017, 11, 20),
+						pointInterval: 24 * 3600 * 1000
+				}
+		},
+		series: [{
+				name: '总收益',
+				data: profitData
+		}],
+		responsive: {
+				rules: [{
+						condition: {
+								maxWidth: 500
+						},
+						chartOptions: {
+								legend: {
+										layout: 'horizontal',
+										align: 'center',
+										verticalAlign: 'bottom'
+								}
+						}
+				}]
+		}
+    });
+    }
+    profit();
+</script>
+</html>
