@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>总收益</title>
+<script src="jquery-3.2.1.min.js"></script>
+<script src="stock/highstock.js"></script>
+<script src="stock/modules/exporting.js"></script>
+</head>
+<body>
+    日期:&nbsp;<select name="起始日期" id="sdate"></select><select name="终止日期" id="edate"></select>&nbsp;&nbsp;产品:&nbsp;<select name="产品" id="product"></select>&nbsp;&nbsp;账户:&nbsp;<select name="账户" id="account"></select>&nbsp;&nbsp;<button type="button" id="button" onclick="updateProfit();">查询</button>
+	<div id="container" style="max-width:100%;height:calc(100% - 10px);min-height:550px;"></div>
+</body>
+<script type="text/javascript">
+    function listDates(dateList){
+        var result = "";
+        for (var i = 0; i < dateList.length; ++i) 
+            result = result + "<option value=\'"+ dateList[i] +"\'>" + dateList[i] + "</option>";
+        document.getElementById("sdate").innerHTML = result; 
+        document.getElementById("edate").innerHTML = result;   
+    }
+    function setupDates(){
+        $.ajax({
+            url: '/scripts/pos_summary?code=get_all_date',
+            data: {},   
+            success: function (str) {
+                eval("dateList=" + str);
+                listDates(dateList);
+            }
+        });
+    }
+    function listProducts(productList){
+        var result = "";
+        for (var i = 0; i < productList.length; ++i) 
+            result = result + "<option value=\""+ productList[i] +"\">" + productList[i] + "</option>";
+        document.getElementById("product").innerHTML = result;
+    }
+    function setupProducts(){
+        $.ajax({
+            url: '/scripts/pos_summary?code=get_all_product',
+            data: {},   
+            success: function (str) {
+                eval("productList=" + str);
+                listProducts(productList);
+            }
+        });
+    }
+    function listAccounts(accountList){
+        var result = "";
+        var symbols = accountList;
+        for (var i = 0; i < accountList.length; ++i) 
+            result = result + "<option value=\""+ accountList[i] +"\">" + accountList[i] + "</option>";
+        document.getElementById("account").innerHTML = result;    
+    }
+    function setupAccounts(){
+        $.ajax({
+            url: '/scripts/pos_summary?code=get_all_account',
+            data: {},   
+            success: function (str) {
+                eval("accountList=" + str);
+                listAccounts(accountList);
+            }
+        });
+    }
+    
+    function tzAdjust(data){
+        var tzOffset = 8 * 3600 * 1000;
+        for(var i = 0;i < data.length;++ i) 
+        	data[i][0] = data[i][0] + tzOffset;
+    }
+    function profitByParams(params){
+        $.ajax({
+            url: '/scripts/pos_summary' + params,
+            data: {},
+            success: function (str) {
+                if (str == "") return;
+                document.getElementById("button").innerHTML = "查询";
+                eval("data=" + str);
+                var profit = data["total"];
+                var shortProfit = data["short"];
+                var longProfit = data["long"];
+                var noProfit = [];
+                var noShortProfit = [];
+                var noLongProfit = [];
+                var updateProfit = [];
+                var updateShortProfit = [];
+                var updateLongProfit = [];
+                for(var i = 0;i < profit.length; i++){
+                    var pd = profit[i];
+                    noProfit.push([pd[0], pd[2]]);
+                    updateProfit.push([pd[0], pd[3]]);
+                }
+                for(var i = 0;i < shortProfit.length; i++){
+                    var pd = shortProfit[i];
+                    noShortProfit.push([pd[0], pd[2]]);
+                    updateShortProfit.push([pd[0], pd[3]]);
+                }
+                for(var i = 0;i < longProfit.length; i++){
+                    var pd = longProfit[i];
+                    noLongProfit.push([pd[0], pd[2]]);
+                    updateLongProfit.push([pd[0], pd[3]]);
+                }
+                tzAdjust(noProfit);
+                tzAdjust(noShortProfit);
+                tzAdjust(noLongProfit);
+                tzAdjust(updateProfit);
+                tzAdjust(updateShortProfit);
+                tzAdjust(updateLongProfit);
+                // create the chart
+                Highcharts.stockChart('container', {
+		            title: {
+				        text: '总收益'
+		            },
+		            yAxis: [
+                        {
+                        	labels: {
+                        		align: 'right', 
+                        		x: -3
+                        	}, 
+                        	title: {
+                        		text: '收益'
+                        	},   
+                        	lineWidth: 2,
+                        	height:'80%'
+                        },
+                        {
+                        	labels: {
+                        		align: 'right', 
+                        		x: -3
+                        	}, 
+                        	title: {
+                                text: '交易额'
+                        	},
+                        	lineWidth: 2,
+                        	height:'20%',
+                        	top:'80%',
+                        	offset: 0
+                        }],
+                    series: [
+                        {
+                        	name: "总收益", 
+                        	data: noProfit,
+                        	color: 'rgb(0,0,255)'
+                        },
+                        {
+                        	name: 'short', 
+                        	data: noShortProfit,
+                        	color: 'rgb(0,255,0)'
+                        },
+                        {
+                        	name: 'long', 
+                        	data: noLongProfit,
+                        	color: 'rgb(255,0,0)'
+                        },
+                        {
+                        	name: "总交易额", 
+                        	data: updateProfit,
+                        	yAxis: 1,
+                        	type: 'column',
+                        	color: 'rgb(0,0,255)'
+                        },
+                        {
+                        	name: "short-交易额", 
+                        	data: updateShortProfit,
+                        	yAxis: 1,
+                        	type: 'column',
+                        	color: 'rgb(0,255,0)'
+                        },
+                        {
+                        	name: "long-交易额", 
+                        	data: updateLongProfit,
+                        	yAxis: 1,
+                        	type: 'column',
+                        	color: 'rgb(255,0,0)'
+                        }],
+		            tooltip: {
+		            	split: true
+		            },
+		            xAxis: {
+				        type: 'datetime',
+				        dateTimeLabelFormats: {
+						    day: '%Y-%m-%d'
+				        }
+		            },
+		            responsive: {
+				        rules: [{
+						    condition: {
+								maxWidth: 500
+						    },
+						    chartOptions: {
+								legend: {
+									layout: 'horizontal',
+									align: 'center',
+									verticalAlign: 'bottom'
+								}
+						    }
+				        }]
+		            }
+		        });
+	
+            }
+        });
+    }
+    function profit(){
+        var params = window.location.href.split('?')
+        if (params.length > 1) 
+            params = "?" + params[1];
+        else 
+            params = "";
+        profitByParams(params);
+    }
+    function updateProfit(){
+        var asdate = document.getElementById("sdate");
+        var all_sdate = asdate.options[asdate.selectedIndex].value;
+        var aedate = document.getElementById("edate");
+        var all_edate = aedate.options[aedate.selectedIndex].value;
+        var aacount = document.getElementById("account");
+        var all_account = aacount.options[aacount.selectedIndex].value;
+        var aproduct = document.getElementById("product");
+        var all_product = aproduct.options[aproduct.selectedIndex].value;
+        document.getElementById("button").innerHTML = "正在查询";
+        profitByParams("?date=" + all_sdate + "-" + all_edate + "&code=profit_sum&account=" + all_account + "&product=" + all_product);
+     }
+    setupDates();
+    setupProducts();
+    setupAccounts();
+    profit();
+</script>
+</html>
