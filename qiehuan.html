@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Tab切换</title>
+	<style>
+	    ul{
+	    	margin: 0;
+	    	padding: 0;
+	    	list-style: none;
+	    	overflow: hidden;
+	    }
+	    ul li{
+	    	float: left;
+	    	width: 100px;
+	    	height: 30px;
+	    	text-align: center;
+	    	line-height: 30px;
+	    	background: #ccc;
+	    }
+	    .cont{
+	    	width: 398px;
+	    	height: 200px;
+	    	line-height: 40px;
+	    	border: 1px solid #ccc;
+	    }
+	    .cont ol{
+	    	display: none;
+	    }
+	</style>
+</head>
+<body>
+	<div class="tab">
+		<ul id="handle">
+		    <li style="background-color: pink;">国内新闻</li>
+		    <li>国际新闻</li>
+		    <li>体育新闻</li>
+		    <li>娱乐新闻</li>
+	    </ul>
+	    <div class="cont">
+	    	<ol style="display: block;" id="cont-0">
+	    		<li>1支持教育网加速,支持手机端。</li>
+	    		<li>空间大、速度快、安全稳固</li>
+	    		<li>支持教育网加速,支持手机端。</li>
+	    	</ol>
+	    	<ol id="cont-1">
+	    		<li>2支持教育网加速,支持手机端。</li>
+	    		<li>空间大、速度快、安全稳固</li>
+	    		<li>支持教育网加速,支持手机端。</li>
+	    	</ol>
+	    	<ol id="cont-2">
+	    		<li>3支持教育网加速,支持手机端。</li>
+	    		<li>空间大、速度快、安全稳固</li>
+	    		<li>支持教育网加速,支持手机端。</li>
+	    	</ol>
+	    	<ol id="cont-3">
+	    		<li>4支持教育网加速,支持手机端。</li>
+	    		<li>空间大、速度快、安全稳固</li>
+	    		<li>支持教育网加速,支持手机端。</li>
+	    	</ol>
+	    </div>
+	</div>
+	<script>
+	    var handle = document.getElementById('handle');
+
+		var tabs = handle.getElementsByTagName('li');
+
+		var ols = document.getElementsByTagName('ol');
+
+		for(var i = 0; i < tabs.length; i++){
+			(function (key){
+				   //添加事件
+			        tabs[i].onclick = function () {
+				    //alert(1);
+				    //console.log(this);
+				    //把所有标签背景色清空
+				    for(var j = 0; j < tabs.length; j++){
+					  tabs[j].style.backgroundColor = '';
+				    }
+				    //给当前标签点击添加背景色
+				    this.style.backgroundColor = 'pink';
+				    //把所有内容隐藏
+				    for(var t = 0; t < ols.length; t++){
+					    ols[t].style.display = 'none';
+				    }
+				    console.log(key);
+				    //console.log(ols);
+				    //从伪数组中获取与标签索引相对应的内容元素
+				    console.log(ols.item(key));
+				    //使得与标签对应的内容显示
+				    ols.item(key).style.display = 'block';
+			    }
+			})(i);
+			
+		};
+	</script>
+</body>
+</html>
