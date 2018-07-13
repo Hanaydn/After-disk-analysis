@@ -1,0 +1,231 @@
+<html>
+<meta charset="UTF-8">
+日期:&nbsp;<select name="起始日期" id="sdate"></select>&nbsp;&nbsp;产品:&nbsp;<select name="产品" id="product"></select>&nbsp;&nbsp;<button type="button" id="button" onclick="updatePositions();">查询</button>
+<h3 align="center">实盘开平仓明细</h3>
+<div id="market_data" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<table id="positions" class="gridtable" border="1" align="center">
+  <thead><th>仓位ID</th><th>方向</th><th>产品</th><th>委托ID</th><th>买卖</th><th>下单时间</th><th>委托价格</th><th>委托数量</th><th>成交数量</th><th>成交价格</th><th>状态</th></thead>
+  <tbody></tbody>
+</table>
+</div>
+<div id="histdaily" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<style type="text/css">
+table.gridtable {
+    font-family: verdana,arial,sans-serif;
+    font-size:11px;
+    color:#333333;
+    border-width: 1px;
+    border-color: #666666;
+    border-collapse: collapse;
+}
+table.gridtable th {
+    border-width: 1px;
+    padding: 8px;
+    border-style: solid;
+    border-color: #666666;
+    background-color: #dedede;
+}
+table.gridtable td {
+	text-align:center; 
+    border-width: 1px;
+    padding: 3px;
+    border-style: solid;
+    border-color: #666666;
+    background-color: #ffffff;
+}
+</style>
+<script src="jquery-3.2.1.min.js"></script>
+<script src="stock/highstock.js"></script>
+<script src="stock/modules/exporting.js"></script>
+<script type="text/javascript">
+function listDates(dateList){
+  var result = "";
+  for (var i = 0; i < dateList.length; ++i) 
+    result = result + "<option value=\'"+ dateList[i] +"\'>" + dateList[i] + "</option>";
+  document.getElementById("sdate").innerHTML = result;    
+}
+function setupDates(){
+  $.ajax({
+    url: '/scripts/pos_summary?code=get_all_date',
+    data: {},   
+    success: function (str) {
+      eval("dateList=" + str);
+      listDates(dateList);
+    }
+  });
+}
+function listProducts(productList){
+  var result = "";
+  for (var i = 0; i < productList.length; ++i){
+    if(productList[i] == "")
+      continue;
+    else
+      result = result + "<option value=\""+ productList[i] +"\">" + productList[i] + "</option>";
+  }
+  document.getElementById("product").innerHTML = result;
+}
+function setupProducts(){
+  $.ajax({
+    url: '/scripts/pos_summary?code=get_all_product',
+    data: {},   
+    success: function (str) {
+      eval("productList=" + str);
+      listProducts(productList);
+    }
+  });
+}
+
+function strtmStamp(tm){
+  var tzOffset = 8 * 3600 * 1000;
+  return new Date(tm + tzOffset).toISOString();
+}
+
+function autoRowSpan(id){
+    var tab = document.getElementById(id);
+    var maxCol = 1, val, count, start;
+
+    for(var col = maxCol-1; col >= 0 ; col--){
+        count = 1;
+        val = "";
+        for(var i=0; i<tab.rows.length; i++){
+            if(val == tab.rows[i].cells[col].innerHTML){
+                count++;
+            }else{
+                if(count > 1){ 
+                    start = i - count;
+                    tab.rows[start].cells[col].rowSpan = count;
+                    for(var j=start+1; j<i; j++){
+                        tab.rows[j].cells[col].style.display = "none";
+                    }
+                    count = 1;
+                }
+                val = tab.rows[i].cells[col].innerHTML;
+            }
+        }
+        if(count > 1 ){
+            start = i - count;
+            tab.rows[start].cells[col].rowSpan = count;
+            for(var j=start+1; j<i; j++){
+                tab.rows[j].cells[col].style.display = "none";
+            }
+        }
+    }
+}
+
+function autoRowSpan2(tb,row,col) {  
+	var lastValue="";  
+	var value="";  
+	var pos=1;  
+	for(var i=row;i<tb.rows.length;i++)  
+	{  
+		value = tb.rows[i].cells[col].innerText;  
+		if(lastValue == value)  
+		{  
+			tb.rows[i].deleteCell(col);  
+			tb.rows[i-pos].cells[col].rowSpan = tb.rows[i-pos].cells[col].rowSpan+1;  
+			pos++;  
+		}else{  
+			lastValue = value;  
+			pos=1;  
+		}  
+	}  
+} 
+
+function updatePositionTable(id, datas){
+  var part = 'tbody';
+  var tableRef = document.getElementById(id).getElementsByTagName(part)[0];
+  var start = 0;
+  var end = datas.length;
+  
+  var i = 0;
+  for(var key in datas){
+	var position = datas[key];
+	var firstAct = true;
+	for(var k in position['orders']) {
+		var newRow = tableRef.insertRow(i);
+		
+		var values = [key, position['dir'], position['prod']];
+		var order = position['orders'][k];
+		values.push(k, order['side'], strtmStamp(order['ctime']), order['price'], order['qty'], order['cum_qty'], order['avg_price'], order['status']);
+
+		for(var j = 0; j < values.length; ++ j){
+		  var newCell = newRow.insertCell(j);
+//		  if(! firstAct && j < 3) 
+//			continue;
+		
+		  // Append a text node to the cell
+		  var newText  = document.createTextNode(values[j]);
+		  newCell.appendChild(newText);
+		}
+		firstAct = false;
+		++i;
+	}
+  }
+}
+
+function tzAdjust(data){
+  var tzOffset = 8 * 3600 * 1000;
+  for(var i = 0;i < data.length;++ i) data[i][0] = data[i][0] + tzOffset;
+}
+
+function showPositions(params){
+  $.ajax({
+    url: '/scripts/pos_summary' + params,
+    data: {},
+    success: function (str) {
+      eval("data=" + str);
+	    var mds = data["mds"];
+	    var positions = data["positions"];
+      var open = data["open"];
+      var cls = data["close"];
+      document.getElementById("button").innerHTML = "查询";
+      var prices = [];
+      var volume = [];
+      for(var i = 0;i < mds.length;++ i){
+        var md = mds[i];
+        prices.push([md[0], md[1]]);
+        volume.push([md[0], md[2]]);
+      }
+      tzAdjust(prices);
+      tzAdjust(volume);
+      tzAdjust(open);
+      tzAdjust(cls);
+      // create the chart
+      Highcharts.stockChart('market_data', {
+        //title: {text: 'Position on TickData'},
+        yAxis: [{labels: {align: 'right', x: -3}, title: {text: 'Last Price'},   height: '60%', lineWidth: 2},
+                {labels: {align: 'right', x: -3}, title: {text: 'Volume'}, top: '65%', height: '35%', offset: 0,lineWidth: 2}],
+        tooltip: {split: true},
+        series: [{name: "Price", data: prices},
+                 {type: 'scatter', name: 'Open', data: open, color: 'rgb(0,255,0)'},
+                 {type: 'scatter', name: 'Close', data: cls, color: 'rgb(255,0,0)'},
+                 {type: 'column', name: 'Volume', data: volume, yAxis: 1}]
+      });
+      updatePositionTable("positions", positions);
+	  autoRowSpan("positions");
+    }
+  });
+}
+function positions(){
+  var params = window.location.href.split('?')
+  if (params.length > 1) 
+    params = "?" + params[1];
+  else 
+    params = "";
+  showPositions(params);
+}
+function updatePositions(){
+  var asdate = document.getElementById("sdate");
+  var all_sdate = asdate.options[asdate.selectedIndex].value;
+  var aproduct = document.getElementById("product");
+  var all_product = aproduct.options[aproduct.selectedIndex].value;
+  document.getElementById("button").innerHTML = "正在查询";
+  showPositions("?date=" + all_sdate + "&code=get_pos_detail&product=" + all_product);
+}
+setupDates();
+setupProducts();
+positions();
+</script>
+<script type="text/javascript">
+</script>
+</html>
